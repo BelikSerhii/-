@@ -33,10 +33,34 @@ NFTS2ME_ABI = [
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "account",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "id",
+                "type": "uint256"
+            }
+        ],
+        "name": "balanceOf",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
     }
 ]
 
-# Адреса контракту
+# Адреса контракту 
 contract_address = "0x5A77B45B6f5309b07110fe98E25A178eEe7516c1"
 
 
@@ -48,12 +72,10 @@ proxy_changer_url = ''
 # URL проксі
 proxy_url = ''
 
-
 def read_private_keys(file_path):
     with open(file_path, 'r') as file:
         private_keys = [line.strip() for line in file if line.strip()]
     return private_keys
-
 
 def change_proxy():
     global proxy_url
@@ -68,16 +90,24 @@ def change_proxy():
     except requests.RequestException as e:
         logger.error(f"Failed to fetch new proxy URL: {str(e)}")
 
+def check_nft_balance(contract, address, token_id):
+    balance = contract.functions.balanceOf(address, token_id).call()
+    return balance > 0
 
 def mint_nft(amount, private_key):
     account = web3.eth.account.from_key(private_key)
     account_address = account.address  
     contract = web3.eth.contract(address=contract_address, abi=NFTS2ME_ABI)
 
+    token_id = 0  
+    
+    if check_nft_balance(contract, account_address, token_id):
+        logger.info(f"Wallet {account_address} already has an NFT. Skipping...")
+        return
+
     nonce = web3.eth.get_transaction_count(account_address)
     gas_price = web3.to_wei(random.uniform(0.05, 0.1), 'gwei')
-    token_id = 0  
-    data = '0x0000000000000000000000000000000000000000000000000000000000000001'  
+    data = b'0x0000000000000000000000000000000000000000000000000000000000000001'  
 
     tx_data = contract.functions.mint(account_address, token_id, amount, data).build_transaction({
         'chainId': 59144,
@@ -100,7 +130,6 @@ def mint_nft(amount, private_key):
 
     return tx_hash
 
-
 def main():
     amount_to_mint = 1  
     private_keys = read_private_keys('wallets.txt')
@@ -109,8 +138,8 @@ def main():
     for private_key in private_keys:
         mint_nft(amount_to_mint, private_key)
         
-        # Пауза
-        pause_duration = random.randint(600, 1800)
+        # Пауза від/до  сек
+        pause_duration = random.randint(900, 2000)
         logger.info(f"Waiting for {pause_duration} seconds before next wallet...")
         time.sleep(pause_duration)
 

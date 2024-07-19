@@ -36,7 +36,7 @@ NFTS2ME_ABI = [
     }
 ]
 
-# Адреса контракту NFTS2ME
+# Адреса контракту
 contract_address = "0x5A77B45B6f5309b07110fe98E25A178eEe7516c1"
 
 
